@@ -4,9 +4,6 @@ library(bit64)
 # remove NULL chars as they may cause errors in the C++ backend
 options(arrow.skip_nul = TRUE)
 
-# load pointer to the parquet file
-ds <- open_dataset("../0004071-160526112335914/preserved_specimen/data_0.parquet")
-
 #dim(ds)
 #schema(ds)
 
@@ -155,9 +152,26 @@ clean_backtick_texts <- function(x) {
 list_criteria_truncated = list_criteria %>%
   clean_backtick_texts()
 
+# load pointer to the parquet file
+ds <- open_dataset(config$app$parquetpath)
+
+# list the colnames in the parquet file
+data_colnames = schema(ds)$names
+
+# select only those used in the SSSOM mapping
+ds_props = c(select_props_truncated)[c(select_props_truncated) %in% data_colnames] %>%
+  c("gbifID","datasetKey","phylum") %>%
+  unique()
+
+# scan only for those columns, do not parallellize and potentially OOM
+scan <- Scanner$create(
+  dataset = ds,
+  projection = ds_props, 
+  use_threads = FALSE
+)
 
 ## start the reader for the parquet file
-reader <- as_record_batch_reader(ds)
+reader <- as_record_batch_reader(scan)
 
 ## define the output schema to be saved as the results parquet file
 output_schema <- schema(
@@ -181,14 +195,17 @@ output_schema <- schema(
   `mids:MIDS3CollectingAgentID` = boolean(),
   `mids:MIDS3IdentifiedAsID` = boolean(),
   `mids:MIDS3IdentifiedByID` = boolean(),
-  `mids:MIDS3MediaID`= boolean()
+  `mids:MIDS3MediaID`= boolean(),
+  year = int16(),
+  countryCode = string(),
+  phylum = string()
 )
 
-# list the colnames in the parquet file
-data_colnames = schema(ds)$names
-
 ## start the output reader for saving the results
-sink <- FileOutputStream$create("processed_output_full.parquet")
+output_name = paste0("outputs/dwcFile ",
+                     format(Sys.time(), "%Y-%m-%d %I.%M%p"),
+                     ".csv")
+sink <- FileOutputStream$create(output_name)
 writer <- ParquetFileWriter$create(
   schema = output_schema,
   sink = sink,
@@ -272,6 +289,14 @@ while (!is.null(batch <- reader$read_next_batch())) {
   # write to file
   writer$WriteTable(output_table,chunk_size = nrow(output_table))
   
+  # remove temporary data objects to keep them from lurking in memory
+  rm(chunk,raw_table,output_table,batch)
+  
+  # garbage collect after every 20 batches
+  if (ibig %% 20 == 0) {
+    gc(verbose = FALSE) 
+  }
+  
   # end of iteration timestamp
   print(paste0("FINISH batch ",ibig," at ",Sys.time()))
 }
@@ -279,4 +304,3 @@ while (!is.null(batch <- reader$read_next_batch())) {
 # close the writer pointers
 writer$Close()
 sink$close()
-
