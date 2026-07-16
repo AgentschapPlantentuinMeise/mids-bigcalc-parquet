@@ -1,11 +1,15 @@
 library(arrow)
 library(bit64)
 library(dplyr)
+library(tidyr)
 library(ggplot2)
 library(scales)
+library(magrittr)
+library(readr)
 
 ####Analysis
-ds_test <- open_dataset("processed_output_full.parquet")
+filename = "outputs/mids_specimen_2018-05-01_0009296-1804121213301972026-07-16 02.03PM.parquet"
+ds_test <- open_dataset(filename)
 
 # Calculate frequencies instantly
 small_int_frequencies <- ds_test |>
@@ -86,3 +90,5 @@ ggplot(grap_tbl, aes(x = column_name, y = true_count, fill = achieved)) +
   geom_vline(xintercept=cutof1,linetype="dashed",linewidth=1) +
   geom_vline(xintercept=cutof2,linetype="dashed",linewidth=1) +
   geom_vline(xintercept=cutof3,linetype="dashed",linewidth=1)
+
+write_tsv(final_boolean_table,paste0(filename,"__simple.csv"))

@@ -202,9 +202,13 @@ output_schema <- schema(
 )
 
 ## start the output reader for saving the results
-output_name = paste0("outputs/dwcFile ",
-                     format(Sys.time(), "%Y-%m-%d %I.%M%p"),
-                     ".csv")
+output_name = config$app$parquetpath %>%
+  gsub(".*/","",.) %>%
+  gsub(".parquet","",.,fixed=T) %>%
+  paste0("outputs/mids_",
+         .,
+         format(Sys.time(), "%Y-%m-%d %I.%M%p"),
+         ".parquet")
 sink <- FileOutputStream$create(output_name)
 writer <- ParquetFileWriter$create(
   schema = output_schema,
