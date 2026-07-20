@@ -8,17 +8,34 @@ library(magrittr)
 library(readr)
 
 ####Analysis
-filename = "outputs/mids_specimen_2018-05-01_0009296-1804121213301972026-07-16 02.03PM.parquet"
+filename = "outputs/mids_specimen_2019-01-02_0022170-1811081151022112026-07-20 10.44AM.parquet"
 ds_test <- open_dataset(filename)
 
 # Calculate frequencies instantly
 small_int_frequencies <- ds_test |>
   count(MIDS_level) |>
-  collect()
+  collect() |>
+  mutate(percent = 100*n/sum(n))
 
-bool_cols <- names(ds_test)[sapply(ds_test$schema$fields, function(f) f$type$ToString() == "bool")]
+# phyla <- ds_test |>
+#   count(phylum) |>
+#   collect() 
+
+# Calculate frequencies instantly for specific subsets
+small_int_frequencies_be <- ds_test |>
+  filter(countryCode=="BE") |>
+  count(MIDS_level) |>
+  collect() |>
+  mutate(percent = 100*n/sum(n))
+
+tracheophyta <- ds_test |>
+  filter(phylum == "Tracheophyta") |>
+  count(MIDS_level) |>
+  collect() |>
+  mutate(percent = 100*n/sum(n))
 
 # 2. Compute the TRUE counts for all 18 columns in a single C++ pass
+bool_cols <- names(ds_test)[sapply(ds_test$schema$fields, function(f) f$type$ToString() == "bool")]
 bool_summary_raw <- ds_test |>
   summarise(
     total_rows = n(),
@@ -91,4 +108,12 @@ ggplot(grap_tbl, aes(x = column_name, y = true_count, fill = achieved)) +
   geom_vline(xintercept=cutof2,linetype="dashed",linewidth=1) +
   geom_vline(xintercept=cutof3,linetype="dashed",linewidth=1)
 
-write_tsv(final_boolean_table,paste0(filename,"__simple.csv"))
+# concatenate mids level values to the element binary map
+level_values = small_int_frequencies %>%
+  rename(column_name = MIDS_level,true_count = n, true_percentage = percent) %>%
+  mutate(total_rows = final_boolean_table$total_rows[1],
+         false_count = NA) %>%
+  select(all_of(colnames(final_boolean_table)))
+
+# save the summary data as a simple csv
+write_tsv(rbind(final_boolean_table,level_values),paste0(filename,"__simple.csv"),na="")
