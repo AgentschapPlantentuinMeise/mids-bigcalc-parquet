@@ -8,7 +8,7 @@ library(magrittr)
 library(readr)
 
 ####Analysis
-filename = "outputs/mids_specimen_2020-01-01_0031568-1911050905596802026-07-20 01.48PM.parquet"
+filename = "outputs/mids_specimen_2024-01-01_0041096-2311200841131262026-08-06 10.27AM.parquet"
 ds_test <- open_dataset(filename)
 
 # Calculate frequencies instantly
@@ -21,18 +21,18 @@ small_int_frequencies <- ds_test |>
 #   count(phylum) |>
 #   collect() 
 
-# Calculate frequencies instantly for specific subsets
-small_int_frequencies_be <- ds_test |>
-  filter(countryCode=="BE") |>
-  count(MIDS_level) |>
-  collect() |>
-  mutate(percent = 100*n/sum(n))
-
-tracheophyta <- ds_test |>
-  filter(phylum == "Tracheophyta") |>
-  count(MIDS_level) |>
-  collect() |>
-  mutate(percent = 100*n/sum(n))
+# # Calculate frequencies instantly for specific subsets
+# small_int_frequencies_be <- ds_test |>
+#   filter(countryCode=="BE") |>
+#   count(MIDS_level) |>
+#   collect() |>
+#   mutate(percent = 100*n/sum(n))
+# 
+# tracheophyta <- ds_test |>
+#   filter(phylum == "Tracheophyta") |>
+#   count(MIDS_level) |>
+#   collect() |>
+#   mutate(percent = 100*n/sum(n))
 
 # 2. Compute the TRUE counts for all 18 columns in a single C++ pass
 bool_cols <- names(ds_test)[sapply(ds_test$schema$fields, function(f) f$type$ToString() == "bool")]
