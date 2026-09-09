@@ -8,7 +8,9 @@ library(magrittr)
 library(readr)
 
 ####Analysis
-filename = "outputs/mids_specimen_2024-01-01_0041096-2311200841131262026-08-06 10.27AM.parquet"
+filename = paste0("outputs/",
+                  "mids_specimulti_2026-01-01_0070190-2511200835450852026-09-08 05.20PM",
+                  ".parquet")
 ds_test <- open_dataset(filename)
 
 # Calculate frequencies instantly

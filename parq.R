@@ -296,10 +296,7 @@ while (!is.null(batch <- reader$read_next_batch())) {
   # remove temporary data objects to keep them from lurking in memory
   rm(chunk,raw_table,output_table,batch)
   
-  # garbage collect after every 20 batches
-  if (ibig %% 20 == 0) {
-    gc(verbose = FALSE) 
-  }
+  gc(verbose = FALSE) 
   
   # end of iteration timestamp
   print(paste0("FINISH batch ",ibig," at ",Sys.time()))
