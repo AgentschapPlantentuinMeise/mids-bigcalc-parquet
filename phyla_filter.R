@@ -13,28 +13,30 @@ filename = paste0("outputs/",
                   ".parquet")
 ds_test <- open_dataset(filename)
 
-# Calculate frequencies instantly
-small_int_frequencies <- ds_test |>
-  count(MIDS_level) |>
-  collect() |>
-  mutate(percent = 100*n/sum(n))
+phyla <- ds_test |>
+  count(phylum) |>
+  collect()
 
-# # Calculate frequencies instantly for specific subsets
-# small_int_frequencies_be <- ds_test |>
-#   filter(countryCode=="BE") |>
-#   count(MIDS_level) |>
-#   collect() |>
-#   mutate(percent = 100*n/sum(n))
-# 
-# tracheophyta <- ds_test |>
-#   filter(phylum == "Tracheophyta") |>
-#   count(MIDS_level) |>
-#   collect() |>
-#   mutate(percent = 100*n/sum(n))
+library(rgbif)
+phyla$kingdom=NA
+for (i in 1:dim(phyla)[1]) {
+  if (is.na(phyla$phylum[i])) {next}
+  bb_lookup = name_backbone(phyla$phylum[i])
+  if (!is.null(bb_lookup$kingdom)) {
+    phyla$kingdom[i]=bb_lookup$kingdom[1]
+  }
+}
+
+#write_tsv(phyla,"outputs/2026_phylum_to_kingdom.txt",na="")
+
+animals = phyla %>%
+  filter(kingdom=="Animalia") %>%
+  pull(1)
 
 # 2. Compute the TRUE counts for all 18 columns in a single C++ pass
 bool_cols <- names(ds_test)[sapply(ds_test$schema$fields, function(f) f$type$ToString() == "bool")]
 bool_summary_raw <- ds_test |>
+  filter(phylum %in% animals) |>
   summarise(
     total_rows = n(),
     across(all_of(bool_cols), ~sum(as.integer(.x), na.rm = TRUE))
@@ -53,8 +55,11 @@ final_boolean_table <- bool_summary_raw |>
     true_percentage = (true_count / total_rows) * 100
   )
 
-print(final_boolean_table)
-
+small_int_frequencies <- ds_test |>
+  filter(phylum %in% animals) |>
+  count(MIDS_level) |>
+  collect() |>
+  mutate(percent = 100*n/sum(n))
 
 ### graph 
 
@@ -92,7 +97,7 @@ cutof3 = grep("3",inf_elements)[1] - 0.5
 
 # Plot the graph
 ggplot(grap_tbl, aes(x = column_name, y = true_count, fill = achieved)) +
-  labs(x = "", y = "% of Specimens achieving the MIDS element", fill = "MIDS element achieved") +
+  labs(x = "", y = "% of Animal Specimens achieving the MIDS element", fill = "MIDS element achieved") +
   geom_bar(stat = "identity", position = "fill") +
   scale_x_discrete(labels = function(x) wrap_hard_hyphen(x)) +
   scale_y_continuous(labels = percent_format()) +
@@ -114,4 +119,4 @@ level_values = small_int_frequencies %>%
   select(all_of(colnames(final_boolean_table)))
 
 # save the summary data as a simple csv
-write_tsv(rbind(final_boolean_table,level_values),paste0(filename,"__simple.csv"),na="")
+write_tsv(rbind(final_boolean_table,level_values),paste0(filename,"__simple_animalia.csv"),na="")
