@@ -242,6 +242,9 @@ while (!is.null(batch <- reader$read_next_batch())) {
   # add missing columns from the SSSOM mapping, so the calculator code doesn't crash
   chunk[, missing] <- as.character(NA)
   
+  #Add fix for multimedia derived property now provided as a boolean
+  ## whereas the MIDS calculation expects NA (or empty string)
+  chunk[,multimedia := fifelse(multimedia %in% TRUE, "T",NA_character_)]
   ## slightly adapted MIDS calculation code below
   
   # change unknown or missing values for specific columns to NA
@@ -287,16 +290,44 @@ while (!is.null(batch <- reader$read_next_batch())) {
     select(all_of(names(output_schema))) %>%
     arrow_table()
   
+  # pool = arrow::default_memory_pool()
+  # 
+  # cat("After arrow_table: ",
+  #     round(pool$bytes_allocated / 1024^3,2),
+  #     "GB\n")
+  
   # convert to the correct data type in arrow
   output_table <- raw_table$cast(output_schema)
   
+  # pool = arrow::default_memory_pool()
+  # 
+  # cat("After output table: ",
+  #     round(pool$bytes_allocated / 1024^3,2),
+  #     "GB\n")
+  
+  rm(chunk,raw_table,batch)
+  
+  gc(verbose = F, full = T) 
+  
+  # pool = arrow::default_memory_pool()
+  # 
+  # cat("After GC1: ",
+  #     round(pool$bytes_allocated / 1024^3,2),
+  #     "GB\n")
+  # 
   # write to file
   writer$WriteTable(output_table,chunk_size = nrow(output_table))
   
-  # remove temporary data objects to keep them from lurking in memory
-  rm(chunk,raw_table,output_table,batch)
+  # pool = arrow::default_memory_pool()
+  # 
+  # cat("After writing: ",
+  #     round(pool$bytes_allocated / 1024^3,2),
+  #     "GB\n")
   
-  gc(verbose = FALSE) 
+  # remove temporary data objects to keep them from lurking in memory
+  rm(output_table)
+  
+  gc(verbose = F, full = T) 
   
   # end of iteration timestamp
   print(paste0("FINISH batch ",ibig," at ",Sys.time()))
