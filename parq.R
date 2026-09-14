@@ -244,7 +244,9 @@ while (!is.null(batch <- reader$read_next_batch())) {
   
   #Add fix for multimedia derived property now provided as a boolean
   ## whereas the MIDS calculation expects NA (or empty string)
-  chunk[,multimedia := fifelse(multimedia %in% TRUE, "T",NA_character_)]
+  if ("multimedia"%in%colnames(chunk)) {
+    chunk[,multimedia := fifelse(multimedia %in% TRUE, "T",NA_character_)]
+  }
   ## slightly adapted MIDS calculation code below
   
   # change unknown or missing values for specific columns to NA
