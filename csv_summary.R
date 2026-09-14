@@ -56,7 +56,7 @@ ggplot(
     fill = "MIDS Level"
   ) +
   
-  theme_minimal(base_size = 12) +
+  theme_minimal(base_size = 24) +
   theme(
     # Put year below the level labels
     strip.placement = "outside",
@@ -89,7 +89,7 @@ year_info <- resu_levels2 %>%
   )
 
 ggplot(resu_levels2,
-       aes(x = xpos, y = true_count, fill = level)) +
+       aes(x = xpos, y = true_count/1000000, fill = level)) +
   
   # Counts for individual levels
   geom_col(width = 0.8) +
@@ -97,14 +97,14 @@ ggplot(resu_levels2,
   # Total number of records per year
   geom_line(
     data = year_info,
-    aes(x = mid, y = total),
+    aes(x = mid, y = total/1000000),
     inherit.aes = FALSE,
     linewidth = 1,
     group = 1
   ) +
   geom_point(
     data = year_info,
-    aes(x = mid, y = total),
+    aes(x = mid, y = total/1000000),
     inherit.aes = FALSE,
     size = 2.5
   ) +
@@ -123,25 +123,15 @@ ggplot(resu_levels2,
     expand = expansion(add = 0.5)
   ) +
   
-  scale_y_continuous(
-    labels = scales::label_number(big.mark = ","),
-    expand = expansion(mult = c(0, 0.05))
-  ) +
+  # scale_y_continuous(
+  #   labels = scales::label_number(big.mark = ","),
+  #   expand = expansion(mult = c(0, 0.05))
+  # ) +
   
   labs(
     x = NULL,
     y = "Number of GBIF Specimen records (Millions)",
     fill = "Level"
-  ) +
-  
-  theme_minimal(base_size = 12) +
-  theme(
-    panel.grid.major.x = element_blank(),
-    panel.grid.minor = element_blank(),
-    legend.position = "right",
-    
-    # Extra room for year labels
-    plot.margin = margin(5.5, 5.5, 25, 5.5)
   ) +
   
   # Year labels underneath the level labels
@@ -150,7 +140,18 @@ ggplot(resu_levels2,
     aes(x = mid, y = -Inf, label = year),
     inherit.aes = FALSE,
     vjust = 3.2,
-    fontface = "bold"
+    fontface = "bold",
+    size = 24/.pt
+  ) +
+  
+  theme_minimal(base_size = 24) +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.position = "right",
+    
+    # Extra room for year labels
+    plot.margin = margin(5.5, 5.5, 25, 5.5)
   ) +
   
   coord_cartesian(clip = "off")

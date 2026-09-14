@@ -8,9 +8,12 @@ library(magrittr)
 library(readr)
 
 ####Analysis
+file_identifier = "mids_specimulti_2016-06-07_0004071-1605261123359142026-09-12 08.44PM"
+
 filename = paste0("outputs/",
-                  "mids_specimulti_2021-01-01_0147211-2006130841481432026-09-13 02.09PM",
+                  file_identifier,
                   ".parquet")
+the_year = substr(file_identifier,17,20)
 ds_test <- open_dataset(filename)
 
 # Calculate frequencies instantly
@@ -90,21 +93,56 @@ cutof1 = grep("1",inf_elements)[1] - 0.5
 cutof2 = grep("2",inf_elements)[1] - 0.5
 cutof3 = grep("3",inf_elements)[1] - 0.5
 
+grap_tbl %<>%
+  mutate(level = substr(column_name,1,1),
+         element = substr(column_name,2,nchar(column_name)))
+
 # Plot the graph
-ggplot(grap_tbl, aes(x = column_name, y = true_count, fill = achieved)) +
-  labs(x = "", y = "% of Specimens achieving the MIDS element", fill = "MIDS element achieved") +
+ggplot(grap_tbl, aes(x = element, y = true_count, fill = achieved)) +
+  theme_minimal(base_size=16) +
+  labs(x = "", 
+       y = "% of Specimens achieving the MIDS element", 
+       fill = "MIDS element achieved",
+       title=the_year) +
   geom_bar(stat = "identity", position = "fill") +
-  scale_x_discrete(labels = function(x) wrap_hard_hyphen(x)) +
+  facet_grid(
+    . ~ level,
+    scales = "free_x",
+    space = "free_x",
+    switch = "x"
+  ) +
+  #scale_x_discrete(labels = function(x) wrap_hard_hyphen(x)) +
   scale_y_continuous(labels = percent_format()) +
-  theme(axis.text=element_text(size=12)) +
+  theme(axis.text=element_text(size=16)) +
   scale_fill_discrete(labels = c("No",
                                  "Yes")) +
   geom_hline(yintercept=0.50,linetype="dotted") +
   geom_hline(yintercept=0.75,linetype="dotted") +
   geom_hline(yintercept=0.25,linetype="dotted") +
-  geom_vline(xintercept=cutof1,linetype="dashed",linewidth=1) +
-  geom_vline(xintercept=cutof2,linetype="dashed",linewidth=1) +
-  geom_vline(xintercept=cutof3,linetype="dashed",linewidth=1)
+  theme(
+    strip.placement = "outside",
+    strip.background = element_blank(),
+    strip.text.x = element_text(face = "bold"),
+    
+    panel.spacing.x = unit(0, "pt"),
+    panel.border = element_rect(
+      colour = "grey70",
+      fill = NA,
+      linewidth = 0.5
+    ),
+    axis.text.x = element_text(
+      size = 16,
+      angle = 45,
+      hjust = 1,
+      vjust = 1
+    ),
+    
+    plot.title = element_text(hjust = 0.5),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    
+    legend.position = "right"
+  )
 
 # concatenate mids level values to the element binary map
 level_values = small_int_frequencies %>%
