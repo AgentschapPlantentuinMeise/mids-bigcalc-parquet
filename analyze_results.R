@@ -36,7 +36,8 @@ small_int_frequencies <- ds_test |>
 #   mutate(percent = 100*n/sum(n))
 
 # 2. Compute the TRUE counts for all 18 columns in a single C++ pass
-bool_cols <- names(ds_test)[sapply(ds_test$schema$fields, function(f) f$type$ToString() == "bool")]
+bool_cols <- names(ds_test)[sapply(ds_test$schema$fields, 
+                                   function(f) f$type$ToString() == "bool")]
 bool_summary_raw <- ds_test |>
   summarise(
     total_rows = n(),
