@@ -25,7 +25,8 @@ resu_levels2 <- resu_levels %>%
   separate(xlab, into = c("year", "level"), sep = ":", remove = FALSE) %>%
   mutate(
     year  = as.integer(year),
-    level = factor(level, levels = c("-1", "0", "1", "2", "3"))
+    level = gsub("-1","<0",level,fixed=T),
+    level = factor(level, levels = c("<0", "0", "1", "2", "3"))
   ) %>%
   arrange(year, level) %>%
   mutate(xpos = row_number())

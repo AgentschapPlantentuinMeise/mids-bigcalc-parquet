@@ -6,9 +6,10 @@ library(ggplot2)
 library(scales)
 library(magrittr)
 library(readr)
+library(ggbrace)
 
 ####Analysis
-file_identifier = "mids_specimulti_2016-06-07_0004071-1605261123359142026-09-12 08.44PM"
+file_identifier = "mids_specimulti_2026-01-01_0070190-2511200835450852026-09-12 07.05PM"
 
 filename = paste0("outputs/",
                   file_identifier,
@@ -98,32 +99,115 @@ grap_tbl %<>%
   mutate(level = substr(column_name,1,1),
          element = substr(column_name,2,nchar(column_name)))
 
-# Plot the graph
+# # Plot the graph
+# ggplot(grap_tbl, aes(x = element, y = true_count, fill = achieved)) +
+#   theme_minimal(base_size=16) +
+#   labs(x = "", 
+#        y = "% of Specimens achieving the MIDS element", 
+#        fill = "MIDS element achieved",
+#        title=the_year) +
+#   geom_bar(stat = "identity", position = "fill") +
+#   facet_grid(
+#     . ~ level,
+#     scales = "free_x",
+#     space = "free_x",
+#     switch = "x"
+#   ) +
+#   #scale_x_discrete(labels = function(x) wrap_hard_hyphen(x)) +
+#   scale_y_continuous(labels = percent_format()) +
+#   theme(axis.text=element_text(size=16)) +
+#   scale_fill_discrete(labels = c("No",
+#                                  "Yes")) +
+#   geom_hline(yintercept=0.50,linetype="dotted") +
+#   geom_hline(yintercept=0.75,linetype="dotted") +
+#   geom_hline(yintercept=0.25,linetype="dotted") +
+#   theme(
+#     strip.placement = "outside",
+#     strip.background = element_blank(),
+#     strip.text.x = element_text(face = "bold"),
+#     
+#     panel.spacing.x = unit(0, "pt"),
+#     panel.border = element_rect(
+#       colour = "grey70",
+#       fill = NA,
+#       linewidth = 0.5
+#     ),
+#     axis.text.x = element_text(
+#       size = 16,
+#       angle = 45,
+#       hjust = 1,
+#       vjust = 1
+#     ),
+#     
+#     plot.title = element_text(hjust = 0.5),
+#     panel.grid.major.x = element_blank(),
+#     panel.grid.minor = element_blank(),
+#     
+#     legend.position = "right"
+#   )
+
+# Count the distinct elements in each level
+brace_counts <- grap_tbl |>
+  distinct(level, element) |>
+  count(level, name = "n")
+
+# Coordinates for the ends of each brace
+brace_df <- data.frame(
+  level = rep(brace_counts$level, each = 2),
+  x = as.vector(rbind(
+    rep(0.55, nrow(brace_counts)),
+    brace_counts$n + 0.45
+  )),
+  y = 1
+)
+
 ggplot(grap_tbl, aes(x = element, y = true_count, fill = achieved)) +
-  theme_minimal(base_size=16) +
-  labs(x = "", 
-       y = "% of Specimens achieving the MIDS element", 
-       fill = "MIDS element achieved",
-       title=the_year) +
+  theme_minimal(base_size = 16) +
+  labs(
+    x = "",
+    y = "% of Specimens achieving the MIDS element",
+    fill = "MIDS element achieved",
+    title = the_year
+  ) +
   geom_bar(stat = "identity", position = "fill") +
+  
+  # Curly brace above each group of bars
+  ggbrace::stat_brace(
+    data = brace_df,
+    aes(x = x, y = y, group = 1),
+    inherit.aes = FALSE,
+    rotate = 0,
+    outerstart = 1.04,
+    width = 0.045,
+    linewidth = 0.8
+  ) +
+  
   facet_grid(
     . ~ level,
     scales = "free_x",
-    space = "free_x",
-    switch = "x"
+    space = "free_x"
   ) +
-  #scale_x_discrete(labels = function(x) wrap_hard_hyphen(x)) +
-  scale_y_continuous(labels = percent_format()) +
-  theme(axis.text=element_text(size=16)) +
-  scale_fill_discrete(labels = c("No",
-                                 "Yes")) +
-  geom_hline(yintercept=0.50,linetype="dotted") +
-  geom_hline(yintercept=0.75,linetype="dotted") +
-  geom_hline(yintercept=0.25,linetype="dotted") +
+  
+  # Extra vertical space for the braces
+  scale_y_continuous(
+    breaks = seq(0, 1, 0.25),
+    labels = percent_format(),
+    expand = expansion(mult = 0)
+  ) +
+  coord_cartesian(ylim = c(0, 1.14)) +
+  
+  scale_fill_discrete(labels = c("No", "Yes")) +
+  
+  geom_hline(yintercept = c(0.25, 0.50, 0.75),
+             linetype = "dotted") +
+  
   theme(
     strip.placement = "outside",
     strip.background = element_blank(),
-    strip.text.x = element_text(face = "bold"),
+    strip.text.x = element_text(
+      face = "bold",
+      size = 18
+    ),
     
     panel.spacing.x = unit(0, "pt"),
     panel.border = element_rect(
@@ -131,6 +215,8 @@ ggplot(grap_tbl, aes(x = element, y = true_count, fill = achieved)) +
       fill = NA,
       linewidth = 0.5
     ),
+    
+    axis.text = element_text(size = 16),
     axis.text.x = element_text(
       size = 16,
       angle = 45,
@@ -141,7 +227,6 @@ ggplot(grap_tbl, aes(x = element, y = true_count, fill = achieved)) +
     plot.title = element_text(hjust = 0.5),
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
-    
     legend.position = "right"
   )
 
