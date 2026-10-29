@@ -1,0 +1,2 @@
+wget https://api.gbif.org/v1/occurrence/download/request/0070190-251120083545085.zip
+unzip -d 0070190-251120083545085 0070190-251120083545085.zip occurrence.txt multimedia.txt && rm 0070190-251120083545085.zip
