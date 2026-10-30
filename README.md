@@ -1,4 +1,4 @@
-# MIDS calculation based on GBIF snapshots
+# MIDS calculation based on GBIF snapshots from Darwin Core Archives
 
 This repository includes code to calculate MIDS levels and information element achievements for snapshot data of GBIF. More info on the MIDS standard can be found on the [TDWG MIDS standard draft website](https://mids.tdwg.org/). This work is based on previous efforts to calculate MIDS at the full GBIF scale ([Dillen et al. 2025](https://doi.org/10.3897/biss.9.181898)), which used a snapshot of GBIF with Preserved Specimen records only, retrieved through the SQL API, and applied the [MIDSCalculator code](https://github.com/AgentschapPlantentuinMeise/MIDSCalculator) in batch on this large dataset (~120 GB).
 
